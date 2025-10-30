@@ -6,7 +6,7 @@ read option
 
 case $option in
     1) 
-        nasm -f bin bootloader.asm -o out/bootloader.bin
+      nasm -fbin boot_sect_main.asm -o out/bootloader.bin
         ;;
     2) 
         qemu-system-x86_64 out/bootloader.bin -boot c

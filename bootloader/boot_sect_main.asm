@@ -20,10 +20,11 @@
 %include "boot_sect_print.asm"
 %include "boot_sect_print_hex.asm"
 %include "boot_sect_disk.asm"
-%include "32bit-print.asm"
+%include "32bit/32bit-print.asm"
 
 times 510-($-$$) db 0
 dw 0xaa55
+
 
 ; boot sector = sector 1 of cyl 0 of head 0 hdd 0
 ; from now, sector 2...
