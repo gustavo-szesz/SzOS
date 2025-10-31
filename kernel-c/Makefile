@@ -1,32 +1,36 @@
-# $@ = target file
-# $< = first dependency
-# $^ = all dependencies
+C_SOURCES = $(wildcard kernel/*.c drivers/*.c)
+HEADERS = $(wildcard kernel/*.h drivers/*.h)
+OBJS = $(C_SOURCES:.c=.o)
 
-# First rule is the one executed when no parameters are fed to the Makefile
-all: run
+CC = /home/szesz/opt/cross/bin/i686-elf-gcc
+GDB = /home/szesz/opt/cross/bin/i686-elf-gdb
 
-# Notice how dependencies are built as needed
-kernel.bin: kernel_entry.o kernel.o
+CFLAGS = -g
+
+os-image.bin: boot/bootsect.bin kernel.bin
+	cat $^ > os-image.bin
+
+kernel.bin: boot/kernel_entry.o $(OBJS)
 	i686-elf-ld -o $@ -Ttext 0x1000 $^ --oformat binary
 
-kernel_entry.o: kernel_entry.asm
-	nasm $< -f elf -o $@
-
-kernel.o: kernel.c
-	i686-elf-gcc -ffreestanding -c $< -o $@
-
-# Rule to disassemble the kernel - may be useful to debug
-kernel.dis: kernel.bin
-	ndisasm -b 32 $< > $@
-
-bootsect.bin: bootsect.asm
-	nasm $< -f bin -o $@
-
-os-image.bin: bootsect.bin kernel.bin
-	cat $^ > $@
+# debug
+kernel.elf: boot/kernel_entry.o $(OBJS)
+	i686-elf-ld -o $@ -Ttext 0x1000 $^
 
 run: os-image.bin
-	qemu-system-x86_64 -fda $<
+	qemu-system-x86_64 -fda os-image.bin
+
+debug: kernel.elf
+	qemu-system-x86_64 -fda os-image.bin &
+	$(GDB) -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
+
+#rules for wildcards
+%.o: %.c $(HEADERS)
+	$(CC) $(CFLAGS) -ffreestanding -c $< -o $@
+
+%.o: %.asm
+	nasm $< -f elf -o $@
 
 clean:
-	rm *.bin *.o *.dis
+	rm -rf *.bin *.dis *.o os-image.bin *.elf
+	rm -rf kernel/*.o boot/*.bin drivers/*.o boot/*.o
