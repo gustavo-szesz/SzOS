@@ -32,6 +32,7 @@ typedef struct {
 /* Only declare the objects here (no definitions in headers) */
 extern idt_gate_t idt[IDT_ENTRIES];
 extern idt_register_t idt_reg;
+// cpu/idt.h defines how an idt entry is stored idt_gate (there need to be 256 of them, even if null, or the CPU may panic) and the actual idt structure that the BIOS will load, idt_register which is just a memory address and a size, similar to the GDT register.
 
 /* Functions implemented in idt.c */
 void set_idt_gate(int n, u32 handler);

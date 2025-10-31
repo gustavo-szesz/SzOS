@@ -14,6 +14,12 @@
 }
  */
 void main() {
+  kprint("SZ_OS Kernel Loaded.\n");
+  kprint("Welcome to SZ_OS!\n");
+  kprint("Initializing...\n\n\n");
+  
+  kprint_at("Kernel Initialized Successfully.", 50, 10);
+
   isr_install();
   __asm__ __volatile__ ("int $2");
   __asm__ __volatile__ ("int $3");
