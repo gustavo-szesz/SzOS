@@ -1,22 +1,17 @@
 #include "screen.h"
 #include "ports.h"
 
-/* Declaration of private functions */
-int get_cursor_offset();
+/* Private function declarations */
+int get_cursor_offset(void);
 void set_cursor_offset(int offset);
 int print_char(char c, int col, int row, char attr);
 int get_offset(int col, int row);
 int get_offset_row(int offset);
 int get_offset_col(int offset);
 
-/**********************************************************
- * Public Kernel API functions                            *
- **********************************************************/
+/* Public Kernel API */
 
-/**
- * Print a message on the specified location
- * If col, row, are negative, we will use the current offset
- */
+/* Print message at (col,row). If col or row < 0, use current cursor. */
 void kprint_at(char *message, int col, int row) {
     /* Set cursor if col/row are negative */
     int offset;
@@ -38,29 +33,15 @@ void kprint_at(char *message, int col, int row) {
     }
 }
 
-void kprint(char *message) {
-    kprint_at(message, -1, -1);
-}
+void kprint(char *message) { kprint_at(message, -1, -1); }
 
 
-/**********************************************************
- * Private kernel functions                               *
- **********************************************************/
-
-
-/**
- * Innermost print function for our kernel, directly accesses the video memory 
- *
- * If 'col' and 'row' are negative, we will print at current cursor location
- * If 'attr' is zero it will use 'white on black' as default
- * Returns the offset of the next character
- * Sets the video cursor to the returned offset
- */
+/* Private helpers: low-level video access and cursor management */
 int print_char(char c, int col, int row, char attr) {
     unsigned char *vidmem = (unsigned char*) VIDEO_ADDRESS;
     if (!attr) attr = WHITE_ON_BLACK;
 
-    /* Error control: print a red 'E' if the coords aren't right */
+    /* On invalid coords, show a red 'E' at the last cell */
     if (col >= MAX_COLS || row >= MAX_ROWS) {
         vidmem[2*(MAX_COLS)*(MAX_ROWS)-2] = 'E';
         vidmem[2*(MAX_COLS)*(MAX_ROWS)-1] = RED_ON_WHITE;
@@ -73,10 +54,10 @@ int print_char(char c, int col, int row, char attr) {
 
     if (c == '\n') {
         row = get_offset_row(offset);
-        offset = get_offset(0, row+1);
+        offset = get_offset(0, row + 1);
     } else {
         vidmem[offset] = c;
-        vidmem[offset+1] = attr;
+        vidmem[offset + 1] = attr;
         offset += 2;
     }
     set_cursor_offset(offset);
@@ -84,10 +65,7 @@ int print_char(char c, int col, int row, char attr) {
 }
 
 int get_cursor_offset() {
-    /* Use the VGA ports to get the current cursor position
-     * 1. Ask for high byte of the cursor offset (data 14)
-     * 2. Ask for low byte (data 15)
-     */
+    /* Read VGA cursor position (high then low byte) */
     port_byte_out(REG_SCREEN_CTRL, 14);
     int offset = port_byte_in(REG_SCREEN_DATA) << 8; /* High byte: << 8 */
     port_byte_out(REG_SCREEN_CTRL, 15);
@@ -96,7 +74,7 @@ int get_cursor_offset() {
 }
 
 void set_cursor_offset(int offset) {
-    /* Similar to get_cursor_offset, but instead of reading we write data */
+    /* Write VGA cursor position (high then low byte) */
     offset /= 2;
     port_byte_out(REG_SCREEN_CTRL, 14);
     port_byte_out(REG_SCREEN_DATA, (unsigned char)(offset >> 8));
@@ -107,11 +85,10 @@ void set_cursor_offset(int offset) {
 void clear_screen() {
     int screen_size = MAX_COLS * MAX_ROWS;
     int i;
-    char *screen = VIDEO_ADDRESS;
-
+    char *screen = (char *)VIDEO_ADDRESS;
     for (i = 0; i < screen_size; i++) {
-        screen[i*2] = ' ';
-        screen[i*2+1] = WHITE_ON_BLACK;
+        screen[i * 2] = ' ';
+        screen[i * 2 + 1] = WHITE_ON_BLACK;
     }
     set_cursor_offset(get_offset(0, 0));
 }
