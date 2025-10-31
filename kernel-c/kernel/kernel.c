@@ -3,7 +3,7 @@
 void main() {
   clear_screen();
   // kprint_at("X", 1, 6);
-  kprint_at("Bem vindo, C!\n\n\n", 30, 1);
+  kprint_at("Bem vindo!\n\n\n", 30, 1);
   kprint("Esse OS esta sendo criado para estudo sobre Sistemas Opercionais "
          "e Web\n\n\nProximos passos: Implementar um dirver NIC-Ethernet");
 
