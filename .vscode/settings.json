@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "util.h": "c",
+        "isr.h": "c",
+        "types.h": "c",
+        "screen.h": "c",
+        "idt.h": "c"
+    }
+}
