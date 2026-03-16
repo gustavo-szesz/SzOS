@@ -3,6 +3,7 @@
 #include "../cpu/idt.h"
 #include "../cpu/isr.h"
 #include "../drivers/keyboard.h"
+#include "../drivers/pic.h"
 
 /* void print_all_rows(void) {
   for (int i = 0; i < 24; i++) {
@@ -43,13 +44,13 @@ void test_keyboard() {
     }
 
     if (key_pressed(KEY_D)) {
-      kprint_at("S pressed", 30, 3);
+      kprint_at("D pressed", 30, 3);
     } else {
       kprint_at("         ", 30, 3);
     }
     
     if (key_pressed(KEY_SPACE)) {
-      kprint_at("S pressed", 40, 3);
+      kprint_at("SPACE pressed", 40, 3);
     } else {
       kprint_at("         ", 40, 3);
     }
@@ -68,18 +69,23 @@ void main() {
   
   kprint_at("Kernel Initialized Successfully.", 50, 10);
 
+  /* Initialize interrupt handling */
   isr_install();
+  pic_init();
   keyboard_init();
+  
+  /* Enable interrupts globally */
+  __asm__ __volatile__ ("sti");
 
   kprint("Testing exceptions...\n");
   __asm__ __volatile__ ("int $2");
   __asm__ __volatile__ ("int $3");
 
   kprint("\nStarting keyboard test...\n");
+  kprint("The loop is running. Press keys:\n");
   test_keyboard();
 
   kprint("Kernel shutting down. \n");
 
   while(1);
-
 }

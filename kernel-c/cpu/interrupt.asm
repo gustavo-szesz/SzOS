@@ -35,38 +35,6 @@ isr_common_stub:
 ; we have a consistent stack for all of them.
 
 ; First make the ISRs global
-global isr0
-global isr1
-global isr2
-global isr3
-global isr4
-global isr5
-global isr6
-global isr7
-global isr8
-global isr9
-global isr10
-global isr11
-global isr12
-global isr13
-global isr14
-global isr15
-global isr16
-global isr17
-global isr18
-global isr19
-global isr20
-global isr21
-global isr22
-global isr23
-global isr24
-global isr25
-global isr26
-global isr27
-global isr28
-global isr29
-global isr30
-global isr31
 
 ; 0: Divide By Zero Exception
 isr0:
@@ -325,3 +293,176 @@ keyboard_common_stub:
     add esp, 8
     sti
     iret
+
+; IRQ Handlers (Hardware Interrupts)
+; IRQ 0-7 map to interrupt 32-39
+; IRQ 8-15 map to interrupt 40-47
+[extern isr_handler]
+
+; Export all ISR handlers
+global isr0
+global isr1
+global isr2
+global isr3
+global isr4
+global isr5
+global isr6
+global isr7
+global isr8
+global isr9
+global isr10
+global isr11
+global isr12
+global isr13
+global isr14
+global isr15
+global isr16
+global isr17
+global isr18
+global isr19
+global isr20
+global isr21
+global isr22
+global isr23
+global isr24
+global isr25
+global isr26
+global isr27
+global isr28
+global isr29
+global isr30
+global isr31
+
+
+; Common IRQ stub
+irq_common_stub:
+    pusha
+    mov ax, ds
+    push eax
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    call irq_handler
+    pop eax
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    popa
+    add esp, 8
+    sti
+    iret
+
+; IRQ 0 - System timer
+irq0:
+    cli
+    push byte 0
+    push byte 32
+    jmp irq_common_stub
+
+; IRQ 1 - Keyboard
+irq1:
+    cli
+    push byte 0
+    push byte 33
+    jmp irq_common_stub
+
+; IRQ 2 - Cascade
+irq2:
+    cli
+    push byte 0
+    push byte 34
+    jmp irq_common_stub
+
+; IRQ 3 - COM2
+irq3:
+    cli
+    push byte 0
+    push byte 35
+    jmp irq_common_stub
+
+; IRQ 4 - COM1
+irq4:
+    cli
+    push byte 0
+    push byte 36
+    jmp irq_common_stub
+
+; IRQ 5 - LPT2
+irq5:
+    cli
+    push byte 0
+    push byte 37
+    jmp irq_common_stub
+
+; IRQ 6 - Diskette
+irq6:
+    cli
+    push byte 0
+    push byte 38
+    jmp irq_common_stub
+
+; IRQ 7 - LPT1
+irq7:
+    cli
+    push byte 0
+    push byte 39
+    jmp irq_common_stub
+
+; IRQ 8 - CMOS clock
+irq8:
+    cli
+    push byte 0
+    push byte 40
+    jmp irq_common_stub
+
+; IRQ 9 - Free/SCSI/NIC
+irq9:
+    cli
+    push byte 0
+    push byte 41
+    jmp irq_common_stub
+
+; IRQ 10 - Free/SCSI/NIC
+irq10:
+    cli
+    push byte 0
+    push byte 42
+    jmp irq_common_stub
+
+; IRQ 11 - Free/SCSI/NIC
+irq11:
+    cli
+    push byte 0
+    push byte 43
+    jmp irq_common_stub
+
+; IRQ 12 - PS2 Mouse
+irq12:
+    cli
+    push byte 0
+    push byte 44
+    jmp irq_common_stub
+
+; IRQ 13 - FPU
+irq13:
+    cli
+    push byte 0
+    push byte 45
+    jmp irq_common_stub
+
+; IRQ 14 - Primary IDE
+irq14:
+    cli
+    push byte 0
+    push byte 46
+    jmp irq_common_stub
+
+; IRQ 15 - Secondary IDE
+irq15:
+    cli
+    push byte 0
+    push byte 47
+    jmp irq_common_stub

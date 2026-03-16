@@ -1,6 +1,7 @@
 #include "isr.h"
 #include "idt.h"
 #include "../drivers/screen.h"
+#include "../drivers/ports.h"
 #include "../kernel/util.h"
 
 /* Can't do this with a loop because we need the address
@@ -52,6 +53,7 @@ void isr_install() {
     port_byte_out(0xA1, 0x0); 
 
     // Install the IRQs
+    
     set_idt_gate(32, (u32)irq0);
     set_idt_gate(33, (u32)irq1);
     set_idt_gate(34, (u32)irq2);
@@ -68,6 +70,7 @@ void isr_install() {
     set_idt_gate(45, (u32)irq13);
     set_idt_gate(46, (u32)irq14);
     set_idt_gate(47, (u32)irq15);
+    
 
 
     set_idt(); // Load with ASM
