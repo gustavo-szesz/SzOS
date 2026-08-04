@@ -13,6 +13,7 @@ CFLAGS = -g
 
 os-image.bin: boot/bootsect.bin kernel.bin
 	cat $^ > os-image.bin
+	truncate -s 1474560 os-image.bin
 
 # '--oformat binary' deletes all symbols as a collateral, so we don't need
 # to 'strip' them manually on this case

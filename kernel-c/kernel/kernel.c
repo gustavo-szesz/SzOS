@@ -5,7 +5,7 @@
 #include "../drivers/keyboard.h"
 #include "../drivers/pic.h"
 #include "../drivers/vga.h"
-
+#include "../kernel/heap.h"
 /* void print_all_rows(void) {
   for (int i = 0; i < 24; i++) {
     char str[255];
@@ -80,7 +80,10 @@ void main() {
   vga_clear_screen(1);
   vga_put_pixel(160, 100, 15);
 
-  for (;;);
+  heap_init();
+
+  void* teste = kmalloc(128);
+//  for (;;);
   
   /* Enable interrupts globally */
   __asm__ __volatile__ ("sti");

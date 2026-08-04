@@ -1,4 +1,5 @@
-; Identical to lesson 13's boot sector, but the %included files have new paths
+; `Identical to lesson 13's boot sector, but the %included files have new paths
+KERNEL_SECTORS equ 100  
 [org 0x7c00]
 KERNEL_OFFSET equ 0x1000 ; The same one we used when linking the kernel
 
@@ -27,35 +28,14 @@ load_kernel:
     mov bx, MSG_LOAD_KERNEL
     call print
     call print_nl
-    ; primeira leitura 17 store
-    mov bx, KERNEL_OFFSET ; Read from disk and store in 0x1000
-    mov dh, 17 ; Our future kernel will be larger, make this big
+    
+    mov bx, KERNEL_OFFSET
+    mov ax, KERNEL_SECTORS
     mov dl, [BOOT_DRIVE]
-    call disk_load
+    call disk_load_many
+    ret 
 
-    ; segunda leitura, setores restantes
-    mov bx, KERNEL_OFFSET + (17 * 512)
-    mov dh, 10 
-    mov dl, [BOOT_DRIVE]
-    call disk_load_head1
-    ret
-
-; Igual ao disk_load, mas lê da cabeça 1, setor 1 (para continuar depois da trilha 0)
-disk_load_head1:
-    pusha
-    push dx
-    mov ah, 0x02
-    mov al, dh
-    mov cl, 0x01   ; setor 1
-    mov ch, 0x00   ; cilindro 0
-    mov dh, 0x01   ; cabeça 1 (diferença principal)
-    int 0x13
-    jc disk_error
-    pop dx
-    cmp al, dh
-    jne sectors_error
-    popa
-    ret
+ 
 
 [bits 16]
 switch_to_vga_mode:
@@ -74,9 +54,9 @@ BEGIN_PM:
 
 
 BOOT_DRIVE db 0 ; It is a good idea to store it in memory because 'dl' may get overwritten
-MSG_REAL_MODE db "Started in 16-bit Real Mode", 0
-MSG_PROT_MODE db "Landed in 32-bit Protected Mode", 0
-MSG_LOAD_KERNEL db "Loading kernel into memory", 0
+MSG_REAL_MODE db "16-bit Real Mode", 0
+MSG_PROT_MODE db "32-bit Protected Mode", 0
+MSG_LOAD_KERNEL db "Loading kernel...", 0
 
 ; padding
 times 510 - ($-$$) db 0
