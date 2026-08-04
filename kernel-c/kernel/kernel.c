@@ -4,6 +4,7 @@
 #include "../cpu/isr.h"
 #include "../drivers/keyboard.h"
 #include "../drivers/pic.h"
+#include "../drivers/vga.h"
 
 /* void print_all_rows(void) {
   for (int i = 0; i < 24; i++) {
@@ -64,6 +65,8 @@ void test_keyboard() {
 
 void main() {
   kprint("SZ_OS Kernel Loaded.\n");
+  kprint("Initializing...\n\n\n");
+  
   kprint("Welcome to SZ_OS!\n");
   kprint("Initializing...\n\n\n");
   
@@ -73,13 +76,18 @@ void main() {
   isr_install();
   pic_init();
   keyboard_init();
+
+  vga_clear_screen(1);
+  vga_put_pixel(160, 100, 15);
+
+  for (;;);
   
   /* Enable interrupts globally */
   __asm__ __volatile__ ("sti");
 
-  kprint("Testing exceptions...\n");
-  __asm__ __volatile__ ("int $2");
-  __asm__ __volatile__ ("int $3");
+  kprint("\nStarting keyboard test...\n");
+  kprint("The loop is running. Press keys:\n");
+  test_keyboard();
 
   kprint("\nStarting keyboard test...\n");
   kprint("The loop is running. Press keys:\n");

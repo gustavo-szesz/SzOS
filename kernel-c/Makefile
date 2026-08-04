@@ -5,9 +5,9 @@ HEADERS = $(wildcard kernel/*.h drivers/*.h cpu/*.h)
 OBJ = ${C_SOURCES:.c=.o cpu/interrupt.o}
 
 # Change this if your cross-compiler is somewhere else (kept your local toolchain)
-CC = /home/szesz/opt/cross/bin/i686-elf-gcc
-LD = /home/szesz/opt/cross/bin/i686-elf-ld
-GDB = /home/szesz/opt/cross/bin/i686-elf-gdb
+CC = /usr/local/i386elfgcc/bin/i386-elf-gcc
+LD = /usr/local/i386elfgcc/bin/i386-elf-ld
+GDB = /usr/local/i386elfgcc/bin/i386-elf-gdb
 # -g: Use debugging symbols in gcc
 CFLAGS = -g
 

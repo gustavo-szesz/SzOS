@@ -11,6 +11,7 @@ KERNEL_OFFSET equ 0x1000 ; The same one we used when linking the kernel
     call print_nl
 
     call load_kernel ; read the kernel from disk
+    call switch_to_vga_mode
     call switch_to_pm ; disable interrupts, load GDT,  etc. Finally jumps to 'BEGIN_PM'
     jmp $ ; Never executed
 
@@ -26,12 +27,43 @@ load_kernel:
     mov bx, MSG_LOAD_KERNEL
     call print
     call print_nl
-
+    ; primeira leitura 17 store
     mov bx, KERNEL_OFFSET ; Read from disk and store in 0x1000
-    mov dh, 16 ; Our future kernel will be larger, make this big
+    mov dh, 17 ; Our future kernel will be larger, make this big
     mov dl, [BOOT_DRIVE]
     call disk_load
+
+    ; segunda leitura, setores restantes
+    mov bx, KERNEL_OFFSET + (17 * 512)
+    mov dh, 10 
+    mov dl, [BOOT_DRIVE]
+    call disk_load_head1
     ret
+
+; Igual ao disk_load, mas lê da cabeça 1, setor 1 (para continuar depois da trilha 0)
+disk_load_head1:
+    pusha
+    push dx
+    mov ah, 0x02
+    mov al, dh
+    mov cl, 0x01   ; setor 1
+    mov ch, 0x00   ; cilindro 0
+    mov dh, 0x01   ; cabeça 1 (diferença principal)
+    int 0x13
+    jc disk_error
+    pop dx
+    cmp al, dh
+    jne sectors_error
+    popa
+    ret
+
+[bits 16]
+switch_to_vga_mode:
+    mov ah, 0x00 
+    mov al, 0x13
+    int 0x10 
+    ret 
+
 
 [bits 32]
 BEGIN_PM:
