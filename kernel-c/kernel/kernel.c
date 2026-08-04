@@ -64,13 +64,13 @@ void test_keyboard() {
 }
 
 void main() {
-  kprint("SZ_OS Kernel Loaded.\n");
-  kprint("Initializing...\n\n\n");
+  //kprint("SZ_OS Kernel Loaded.\n");
+  //kprint("Initializing...\n\n\n");
   
-  kprint("Welcome to SZ_OS!\n");
-  kprint("Initializing...\n\n\n");
+  //kprint("Welcome to SZ_OS!\n");
+  //kprint("Initializing...\n\n\n");
   
-  kprint_at("Kernel Initialized Successfully.", 50, 10);
+  //kprint_at("Kernel Initialized Successfully.", 50, 10);
 
   /* Initialize interrupt handling */
   isr_install();
@@ -85,15 +85,15 @@ void main() {
   /* Enable interrupts globally */
   __asm__ __volatile__ ("sti");
 
-  kprint("\nStarting keyboard test...\n");
-  kprint("The loop is running. Press keys:\n");
-  test_keyboard();
+  //kprint("\nStarting keyboard test...\n");
+  //kprint("The loop is running. Press keys:\n");
+  //test_keyboard();
 
-  kprint("\nStarting keyboard test...\n");
-  kprint("The loop is running. Press keys:\n");
-  test_keyboard();
+  //kprint("\nStarting keyboard test...\n");
+  //kprint("The loop is running. Press keys:\n");
+  //test_keyboard();
 
-  kprint("Kernel shutting down. \n");
+  //kprint("Kernel shutting down. \n");
 
   while(1);
 }
