@@ -3,3 +3,4 @@
 *.elf
 *.dis
 serial.log
+boot/grub/

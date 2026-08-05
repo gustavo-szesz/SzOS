@@ -88,9 +88,9 @@ void main() {
   /* Enable interrupts globally */
   __asm__ __volatile__ ("sti");
 
-  //kprint("\nStarting keyboard test...\n");
-  //kprint("The loop is running. Press keys:\n");
-  //test_keyboard();
+  kprint("\nStarting keyboard test...\n");
+  kprint("The loop is running. Press keys:\n");
+  test_keyboard();
 
   //kprint("\nStarting keyboard test...\n");
   //kprint("The loop is running. Press keys:\n");

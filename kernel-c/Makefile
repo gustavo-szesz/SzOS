@@ -31,6 +31,11 @@ run: os-image.bin
 debug: os-image.bin kernel.elf
 	qemu-system-x86_64 -s -fda os-image.bin &
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
+raw-debug: 
+	qemu-system-x86_64 \
+		-drive format=raw,file=os-image.bin \
+		-S \
+		-gdb tcp::1234
 
 # Generic rules for wildcards
 # To make an object, always compile from its .c

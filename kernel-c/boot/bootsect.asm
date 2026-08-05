@@ -28,14 +28,12 @@ load_kernel:
     mov bx, MSG_LOAD_KERNEL
     call print
     call print_nl
-    
+
     mov bx, KERNEL_OFFSET
     mov ax, KERNEL_SECTORS
     mov dl, [BOOT_DRIVE]
     call disk_load_many
     ret 
-
- 
 
 [bits 16]
 switch_to_vga_mode:
