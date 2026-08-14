@@ -1,6 +1,7 @@
 #include "irq.h"
 #include "idt.h"
 #include "pic.h"
+#include "io.h"
 
 extern void irq0(void);  extern void irq1(void);  extern void irq2(void);  extern void irq3(void);
 extern void irq4(void);  extern void irq5(void);  extern void irq6(void);  extern void irq7(void);
@@ -39,6 +40,12 @@ void irq_handler(struct registers *regs) {
 	/* int_no is 32-47 here; isr_handler() already looked the handler up
 	 * in the shared table and, if int_no >= 32, falls through to here
 	 * without panicking. We just need to send the EOI. */
-	isr_handler(regs);
-	pic_send_eoi(regs->int_no - IRQ_BASE);
+	// isr_handler(regs);
+	// pic_send_eoi(regs->int_no - IRQ_BASE);
+	
+	// (void) regs;
+	// outb(0x20, 0x20);
+
+	(void) regs;
+	outb(0x20, 0x20);
 }

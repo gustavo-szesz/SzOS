@@ -40,6 +40,31 @@ void terminal_putentryat(unsigned char c, uint8_t color, size_t x, size_t y) {
 
 void terminal_putchar(char c) {
 	unsigned char uc = c;
+
+	if (uc == '\n') {
+		terminal_column = 0;
+		if (++terminal_row == VGA_HEIGHT)
+			terminal_row = 0;
+		return;
+	}
+	if (uc == '\r') {
+		terminal_column = 0;
+		return;
+	}
+	if (uc == '\b') {
+		if (terminal_column > 0) {
+			terminal_column--;
+			terminal_putentryat(' ', terminal_color, terminal_column, terminal_row);
+		}
+		return;
+	}
+	if (uc == '\t') {
+		size_t next_stop = (terminal_column + 8) & ~7u;
+		while (terminal_column < next_stop && terminal_column < VGA_WIDTH)
+			terminal_putchar(' ');
+		return;
+	}
+
 	terminal_putentryat(uc, terminal_color, terminal_column, terminal_row);
 	if (++terminal_column == VGA_WIDTH) {
 		terminal_column = 0;

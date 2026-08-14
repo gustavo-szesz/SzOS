@@ -1,10 +1,4 @@
-.section .text 
-
-.global idt_flush
-  mov 4(%esp), %eax
-  lidt (%eax)
-  ret 
-
+.section .text
 
 .macro ISR_NOERRCODE num
 .global isr\num
