@@ -2,6 +2,9 @@
 #include "idt.h"
 #include "pic.h"
 #include "io.h"
+#include <kernel/tty.h>
+
+
 
 extern void irq0(void);  extern void irq1(void);  extern void irq2(void);  extern void irq3(void);
 extern void irq4(void);  extern void irq5(void);  extern void irq6(void);  extern void irq7(void);
@@ -45,6 +48,12 @@ void irq_handler(struct registers *regs) {
 	
 	// (void) regs;
 	// outb(0x20, 0x20);
+	// uint8_t scancode = inb(0x60);
+    // if (!(scancode & 0x80)) {          // ignora "tecla solta"
+    //     char c = scancode_ascii(scancode);
+    //     if (c) terminal_putchar(c);
+    // }
+    // outb(0x20, 0x20);  
 
 	(void) regs;
 	outb(0x20, 0x20);
