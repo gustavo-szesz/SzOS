@@ -1,4 +1,9 @@
 #include <uefi.h>
+#include "sz.c"
+
+uint32_t *g_framebuffer;
+uint32_t  g_pixels_per_line;
+
 
 /* ============================================================
  *         Prototypes
@@ -7,6 +12,8 @@ void draw_logo(void);
 void draw_pixel(uint32_t *framebuffer, int x, int y, uint32_t pixels_per_line, int color);
 void draw_box(uint32_t *framebuffer, int x, int y, int size, uint32_t pixels_per_line, uint32_t color);
 void delay(uint64_t quantidade);
+void draw_gimp_image(uint32_t *framebuffer, uint32_t screen_x, uint32_t screen_y, uint32_t pixels_per_line);
+
 
 efi_physical_address_t find_region_for_malloc(efi_memory_descriptor_t *memory_map, int how_many_entries, uintn_t descriptor_size, uint64_t pages_needed);
 efi_physical_address_t my_malloc(int size_in_bytes, efi_memory_descriptor_t *memory_map, int how_many_entries, uintn_t descriptor_size);
@@ -14,31 +21,34 @@ efi_physical_address_t my_malloc(int size_in_bytes, efi_memory_descriptor_t *mem
 /* ===========================================================
   IDT
 ==============================================================*/
-struct idt_entry
+typedef struct 
 {
-   uint16_t addr_l;
+   uint16_t addr_low;
    uint16_t sel;
-   uint8_t  nulls;
-   uint8_t  attrib;
-   uint16_t addr_h;
-} __attribute__((packed));
+   uint8_t  ist;
+   uint8_t  flags;
+   uint16_t addr_mid;
+   uint32_t addr_high;
+   uint32_t reserved;
+} __attribute__((packed)) idt_entry_t;
 
-struct idt_entry idt[256] __attribute__((aligned(4)));
+idt_entry_t idt[256] __attribute__((aligned(16)));
 
-struct idt_pointer 
+typedef struct  
 {
-    unsigned short limit;
-    unsigned int base;
-}__attribute__((packed));
+    uint16_t limit;
+    uint64_t base;
+}__attribute__((packed)) idt_pointer_t;
 
-int configure_entry_empty(int number, int *table);
+void configure_entry_empty(int number, idt_entry_t *table);
+void initiate_idt(void);
+void outb(uint16_t port, uint8_t value);
+/** ============================================================
+        Handler for IDT
+* ============================================================ */
+void configure_entry_real(int number, idt_entry_t *table, uint64_t address);
 
-void initiate_idt(){
-    // for (int i = 0; i >= 256;i++) {
-    //     configure_entry_empty(int number, int *)
-    // }
-}
-
+void handler_interruption_test(void *frame);
 /* ============================================================
  * Count_ += 1
  * ============================================================ */
@@ -125,6 +135,12 @@ int main(int argc, char **argv) {
     int index_atual_color = 0;
     int hit_on_edge;
 
+
+    initiate_idt();
+    g_framebuffer = framebuffer;
+    g_pixels_per_line = pixels_per_line;
+    configure_entry_real(3, idt, (uint64_t) handler_interruption_test);
+
     while (1) {
         /*  */
         for (uint32_t py = 0; py < height; py++) {
@@ -133,7 +149,11 @@ int main(int argc, char **argv) {
             }
         }
 
+        draw_gimp_image(framebuffer, 40, 50, pixels_per_line);
+
+
         draw_box(framebuffer, x, y, box_size, pixels_per_line, list_colors[index_atual_color]);
+
 
         x += dx;
         y += dy;
@@ -163,17 +183,46 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+// Função para renderizar o gimp_image no framebuffer
+void draw_gimp_image(uint32_t *framebuffer, uint32_t screen_x, uint32_t screen_y, uint32_t pixels_per_line) {
+    uint32_t img_w = gimp_image.width;
+    uint32_t img_h = gimp_image.height;
+    uint32_t bpp   = gimp_image.bytes_per_pixel; // Espera-se 4 (RGBA)
+
+    for (uint32_t y = 0; y < img_h; y++) {
+        for (uint32_t x = 0; x < img_w; x++) {
+            // 1. Calcula o índice base dos bytes deste pixel no array do GIMP
+            uint32_t index = (y * img_w + x) * bpp;
+
+            uint8_t r = gimp_image.pixel_data[index + 0];
+            uint8_t g = gimp_image.pixel_data[index + 1];
+            uint8_t b = gimp_image.pixel_data[index + 2];
+            // uint8_t a = gimp_image.pixel_data[index + 3]; // Canal Alpha (transparência)
+
+            // 2. Converte para o formato de pixel 32-bit (0x00RRGGBB)
+            uint32_t color = (r << 16) | (g << 8) | b;
+
+            // 3. Desenha no framebuffer se estiver dentro dos limites da tela
+            // (Assumindo a mesma lógica que seu draw_pixel faz)
+            uint32_t fb_x = screen_x + x;
+            uint32_t fb_y = screen_y + y;
+
+            framebuffer[fb_y * pixels_per_line + fb_x] = color;
+        }
+    }
+}
+
 /* ============================================================
  * draw
  * ============================================================ */
 void draw_pixel(uint32_t *framebuffer, int x, int y, uint32_t pixels_per_line, int color) {
-    *(framebuffer + y * pixels_per_line + x) = color;
+    *(g_framebuffer + y * pixels_per_line + x) = color;
 }
 
 void draw_box(uint32_t *framebuffer, int x, int y, int size, uint32_t pixels_per_line, uint32_t color) {
     for (int by = 0; by < size; by++) {
         for (int bx = 0; bx < size; bx++) {
-            draw_pixel(framebuffer, x + bx, y + by, pixels_per_line, color);
+            draw_pixel(g_framebuffer, x + bx, y + by, pixels_per_line, color);
         }
     }
 }
@@ -232,5 +281,47 @@ efi_physical_address_t my_malloc(int size_in_bytes, efi_memory_descriptor_t *mem
     return address;
 }
 
+void configure_entry_empty(int number, idt_entry_t *table) {
+    table[number].addr_low  = 0;
+    table[number].sel       = 0;
+    table[number].ist       = 0;
+    table[number].flags     = 0;
+    table[number].addr_mid  = 0;
+    table[number].addr_high = 0;
+    table[number].reserved  = 0;
+}
 
 
+void initiate_idt(void){
+    for (int i = 0; i < 256;i++) {
+        configure_entry_empty(i, idt);
+    }
+    
+    idt_pointer_t ptr;
+    ptr.limit = (sizeof(idt_entry_t) * 256) - 1;
+    ptr.base = (uint64_t) &idt;
+    
+
+    asm volatile("lidt %0" : : "m"(ptr));
+ }
+
+void configure_entry_real(int number, idt_entry_t *table, uint64_t address){
+    table[number].addr_low = address & 0xFFFF;// 16 bits
+    table[number].addr_mid = (address >> 16) & 0xFFFF;
+    table[number].addr_high = (address >> 32) & 0xFFFFFFFF;
+    table[number].sel      = 0x08;
+    table[number].ist      = 0;
+    table[number].flags    = 0x8E;
+    table[number].reserved = 0;
+}
+__attribute__((interrupt))
+void handler_interruption_test(void *frame){
+    draw_pixel(g_framebuffer,  930, 0, g_pixels_per_line, 0x00FFFF00);
+    (void) frame;
+}
+
+void outb(uint16_t port, uint8_t value) {
+    asm volatile("outb %0, %1" : : "a"(value), "Nd"(port));
+}
+
+// SZoS Logo
