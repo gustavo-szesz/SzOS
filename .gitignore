@@ -2,5 +2,11 @@
 *.bin
 *.elf
 *.dis
+*.a 
+*.efi 
+.efi.so 
+EFI/ 
+uefi/*.o 
+uefi/*.a
 serial.log
 boot/grub/
