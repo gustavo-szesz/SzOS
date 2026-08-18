@@ -3,7 +3,7 @@
 
 uint32_t *g_framebuffer;
 uint32_t  g_pixels_per_line;
-
+int g_ticks = 0;
 
 /* ============================================================
  *         Prototypes
@@ -14,6 +14,8 @@ void draw_box(uint32_t *framebuffer, int x, int y, int size, uint32_t pixels_per
 void delay(uint64_t quantidade);
 void draw_gimp_image(uint32_t *framebuffer, uint32_t screen_x, uint32_t screen_y, uint32_t pixels_per_line);
 
+
+void program_pit(uint32_t freq_desired);
 
 efi_physical_address_t find_region_for_malloc(efi_memory_descriptor_t *memory_map, int how_many_entries, uintn_t descriptor_size, uint64_t pages_needed);
 efi_physical_address_t my_malloc(int size_in_bytes, efi_memory_descriptor_t *memory_map, int how_many_entries, uintn_t descriptor_size);
@@ -43,6 +45,11 @@ typedef struct
 void configure_entry_empty(int number, idt_entry_t *table);
 void initiate_idt(void);
 void outb(uint16_t port, uint8_t value);
+void handler_time(void *frame);
+
+void remap_pic(void);
+uint16_t read_current_cs(void);
+void delay_real(int ticks_for_wait);
 /** ============================================================
         Handler for IDT
 * ============================================================ */
@@ -140,7 +147,12 @@ int main(int argc, char **argv) {
     g_framebuffer = framebuffer;
     g_pixels_per_line = pixels_per_line;
     configure_entry_real(3, idt, (uint64_t) handler_interruption_test);
+    configure_entry_real(32, idt, (uint64_t) handler_time);   
 
+    remap_pic();
+    program_pit(100);
+    asm volatile("sti");
+        
     while (1) {
         /*  */
         for (uint32_t py = 0; py < height; py++) {
@@ -177,7 +189,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        delay(30000000);
+        delay_real(10);
     }
 
     return 0;
@@ -309,7 +321,7 @@ void configure_entry_real(int number, idt_entry_t *table, uint64_t address){
     table[number].addr_low = address & 0xFFFF;// 16 bits
     table[number].addr_mid = (address >> 16) & 0xFFFF;
     table[number].addr_high = (address >> 32) & 0xFFFFFFFF;
-    table[number].sel      = 0x08;
+    table[number].sel      = read_current_cs();
     table[number].ist      = 0;
     table[number].flags    = 0x8E;
     table[number].reserved = 0;
@@ -324,4 +336,48 @@ void outb(uint16_t port, uint8_t value) {
     asm volatile("outb %0, %1" : : "a"(value), "Nd"(port));
 }
 
-// SZoS Logo
+void remap_pic(void) {
+    outb(0x20, 0x11);
+    outb(0xA0, 0x11);
+
+    outb(0x21, 32);
+    outb(0xA1, 40);
+
+    outb(0x21, 4);
+    outb(0xA1, 2);
+
+    outb(0x21, 0x01);
+    outb(0xA1, 0x01);
+
+    outb(0x21, 0xFE);
+    outb(0xA1, 0xFF);
+}
+
+__attribute__((interrupt))
+void handler_time(void *frame) {
+    g_ticks = g_ticks + 1;
+    outb(0x20, 0x20);
+    (void) frame;
+}
+
+uint16_t read_current_cs(void) {
+    uint16_t cs;
+    asm volatile("mov %%cs, %0" : "=r"(cs));
+    return cs;
+}
+
+void program_pit(uint32_t freq_desired) {
+    int div = 1193181;
+
+    outb(0x43, 0x36);
+    outb(0x40, div & 0xFF);
+    outb(0x40, (div >> 8) & 0xFF);
+}
+
+void delay_real(int ticks_for_wait) {
+    int ticks_initial = g_ticks;
+
+    while ((g_ticks - ticks_initial) < ticks_for_wait) {
+        continue;
+    }
+}
