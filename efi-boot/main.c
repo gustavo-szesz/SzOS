@@ -1,8 +1,11 @@
 #include <uefi.h>
 
+efi_physical_address_t next_addrs_avaliable = 0;
+
 void draw_logo(void);
 void draw_pixel(uint32_t *framebuffer, int x, int y, uint32_t pixels_per_line, int color);
 void delay(uint64_t quantidade);
+efi_physical_address_t find_region_for_malloc(efi_memory_descriptor_t *memory_map, int how_many_entries, uintn_t descriptor_size, uint64_t pages_registry);
 
 int main(int argc, char **argv) {
     draw_logo();
@@ -56,8 +59,9 @@ int main(int argc, char **argv) {
     int x = 100, y = 100;
     int dx = 4, dy = 3;
     int box_size = 60;
-    int[] list_colors = [0x00E67E22, 0x003498DB, 0x002ECC71, 0x009B59B6];
-    int index_atual_color 
+    int list_colors[] = {0x00E67E22, 0x003498DB, 0x002ECC71, 0x009B59B6};
+    int index_atual_color = 0;
+    int hit_on_edge; 
 
 
     while (1) {
@@ -71,15 +75,30 @@ int main(int argc, char **argv) {
         // desenha o quadrado
         for (int by = 0; by < box_size; by++) {
             for (int bx = 0; bx < box_size; bx++) {
-                draw_pixel(framebuffer, x + bx, y + by, pixels_per_line, 0x00E67E22);
+                draw_pixel(framebuffer, x + bx, y + by, pixels_per_line, list_colors[index_atual_color]);
             }
         }
 
         x += dx;
         y += dy;
 
-        if (x <= 0 || x + box_size >= (int)width)  dx = -dx;
-        if (y <= 0 || y + box_size >= (int)height) dy = -dy;
+
+        if (x <= 0 || x + box_size >= (int)width) {
+            dx += (dx > 0) ? 1 : -1;
+            hit_on_edge = 1;}
+            
+        if (y <= 0 || y + box_size >= (int)height) {
+            dx += (dx > 0) ? 1 : -1;
+            hit_on_edge = 1;
+        }
+
+
+        if (hit_on_edge == 1){
+            index_atual_color = index_atual_color + 1;
+            if (index_atual_color >= sizeof(list_colors)){
+                index_atual_color = 0;
+            }
+        }
 
         delay(30000000);
     }
@@ -115,4 +134,37 @@ void draw_logo(void) {
     for (int line = 0; logo[line] != NULL; line++) {
         printf("%s\n", logo[line]);
     }
+}
+
+// 118:} efi_memory_descriptor_t;
+// 119-
+// 120-typedef struct {
+// 121-    uint64_t    Signature;
+// 122-    uint32_t    Revision;
+// 123-    uint32_t    HeaderSize;
+// 124-    uint32_t    CRC32;
+// 125-    uint32_t    Reserved;
+// 126-} efi_table_header_t;
+// 528:    EfiConventionalMemory,
+
+efi_physical_address_t find_region_for_malloc(efi_memory_descriptor_t *memory_map, int how_many_entries, uintn_t descriptor_size, uint64_t pages_registry){
+    for (int i = 0; i < how_many_entries; i++) {
+        efi_memory_descriptor_t *entry = (efi_memory_descriptor_t*)((uint8_t*)memory_map + (i * descriptor_size));
+        if(entry->Type == EfiConventionalMemory){
+            if (entry->NumberOfPages >= pages_registry) {
+                return entry->PhysicalStart;
+            }
+        }
+    }
+    return 0; 
+
+}
+efi_physical_address_t my_malloc(int size_in_bytes, efi_memory_descriptor_t *memory_map, int how_many_entries, uintn_t descriptor_size){
+    if (next_addrs_avaliable == 0) {
+        uint64_t pages = (size_in_bytes / 4096) + 1;
+        next_addrs_avaliable = find_region_for_malloc(memory_map, how_many_entries, descriptor_size, pages);
+    }
+    efi_physical_address_t address = next_addrs_avaliable;
+    next_addrs_avaliable = next_addrs_avaliable + size_in_bytes;
+    return address;
 }
