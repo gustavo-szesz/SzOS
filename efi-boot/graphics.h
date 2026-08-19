@@ -5,6 +5,8 @@
 
 extern uint32_t *g_framebuffer;
 extern uint32_t  g_pixels_per_line;
+extern uint32_t *g_draw_target; 
+
 
 void draw_pixel(uint32_t *framebuffer, int x, int y, uint32_t pixels_per_line, int color);
 void draw_box(uint32_t *framebuffer, int x, int y, int size, uint32_t pixels_per_line, uint32_t color);

@@ -23,3 +23,10 @@ efi_physical_address_t my_malloc(int size_in_bytes, efi_memory_descriptor_t *mem
     next_addr_available = next_addr_available + size_in_bytes;
     return address;
 }
+
+void copy_memory(uint32_t *destiny, uint32_t *origem, uint32_t many_bytes) {
+    uint32_t many_pixels = many_bytes / 4;
+    for (uint32_t i = 0; i < many_pixels; i++){
+        destiny[i] = origem[i];
+    }
+}

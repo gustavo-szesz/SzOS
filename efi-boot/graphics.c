@@ -3,10 +3,11 @@
 
 uint32_t *g_framebuffer;
 uint32_t  g_pixels_per_line;
+uint32_t *g_draw_target; 
 
 void draw_pixel(uint32_t *framebuffer, int x, int y, uint32_t pixels_per_line, int color) {
     (void) framebuffer; 
-    *(g_framebuffer + y * pixels_per_line + x) = color;
+    *(g_draw_target + y * pixels_per_line + x) = color;
 }
 
 void draw_box(uint32_t *framebuffer, int x, int y, int size, uint32_t pixels_per_line, uint32_t color) {
@@ -34,7 +35,7 @@ void draw_gimp_image(uint32_t *framebuffer, uint32_t screen_x, uint32_t screen_y
 
             uint32_t fb_x = screen_x + x;
             uint32_t fb_y = screen_y + y;
-            g_framebuffer[fb_y * pixels_per_line + fb_x] = color;
+            g_draw_target[fb_y * pixels_per_line + fb_x] = color;
         }
     }
 }

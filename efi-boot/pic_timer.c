@@ -18,8 +18,8 @@ void remap_pic(void) {
     outb(0x21, 0x01);
     outb(0xA1, 0x01);
 
-    outb(0x21, 0xFC); /* IRQ0 (timer) e IRQ1 (teclado) ativos */
-    outb(0xA1, 0xFF);
+    outb(0x21, 0xF8); 
+    outb(0xA1, 0xEF);
 }
 
 void program_pit(uint32_t freq_desired) {
