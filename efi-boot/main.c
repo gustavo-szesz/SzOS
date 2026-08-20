@@ -1,11 +1,11 @@
 #include <uefi.h>
-#include "idt.h"
-#include "ports.h"
-#include "pic_timer.h"
-#include "graphics.h"
-#include "memory.h"
-#include "font.h"
-#include "mouse.h"
+#include "include/idt.h"
+#include "include/ports.h"
+#include "include/pic_timer.h"
+#include "include/graphics.h"
+#include "include/memory.h"
+#include "include/font.h"
+#include "include/mouse.h"
 
 const int UP_KEY = 72;
 const int DOWN_KEY = 80;
@@ -20,6 +20,8 @@ void activate_mouse();
 int main(int argc, char **argv) {
     draw_logo();
     BS->Stall(2000000);
+
+    
 
     /* ---------- 1. GOP (framebuffer) ---------- */
     efi_status_t status;

@@ -35,6 +35,9 @@
 #define PS2_CMD_WRITE_CFG   0x60
 #define PS2_CMD_WRITE_MOUSE 0xD4
 
+#define MOUSE_CMD_DEFAULTS  0xF6
+#define MOUSE_CMD_ENABLE    0xF4
+
 // =============== KEYBOARD ============
 #define KEY_UP              0x48
 #define KEY_DOWN            0x50

@@ -1,5 +1,5 @@
-#include "font.h"
-#include "graphics.h"
+#include "include/font.h"
+#include "include/graphics.h"
 
 /* Cada linha é 1 byte = 8 pixels dessa linha do caractere.
    Bit 1 (da esquerda) = pixel aceso. Só dígitos 0-9 e espaço, por enquanto. */

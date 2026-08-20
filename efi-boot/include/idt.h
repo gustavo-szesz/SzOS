@@ -18,8 +18,6 @@ typedef struct {
     uint64_t base;
 } __attribute__((packed)) idt_pointer_t;
 
-/* a tabela em si -- "extern" avisa outros arquivos que ela existe,
-   sem recriar ela de novo (só é criada de verdade em idt.c) */
 extern idt_entry_t idt[256];
 
 void configure_entry_empty(int number, idt_entry_t *table);

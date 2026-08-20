@@ -1,4 +1,4 @@
-#include "graphics.h"
+#include "include/graphics.h"
 #include "sz.c" 
 
 uint32_t *g_framebuffer;

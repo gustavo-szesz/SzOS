@@ -1,9 +1,10 @@
-#include "mouse.h"
-#include "pic_timer.h"
-#include "ports.h"
+#include "include/mouse.h"
+#include "include/hardware.h"
+#include "include/pic_timer.h"
+#include "include/ports.h"
 
 // 0x60 data (read, write bytes of data)
-// 0x64 command (write and read)
+// PS2_STATUS_PORT command (write and read)
 
 volatile int g_mouse_x = 0;
 volatile int g_mouse_y = 0;
@@ -20,74 +21,76 @@ void mouse_init_state(int start_x, int start_y) {
 
 __attribute__((interrupt))
 void handler_mouse(void *frame) {
-    int data = inb(0x60);
+    static int byte_index = 0;
+        static int packet[3];
 
-    package[mouse_byte_atual] = data;
-    mouse_byte_atual = mouse_byte_atual + 1;
+        packet[byte_index++] = inb(PS2_DATA_PORT);
 
-    if (mouse_byte_atual == 3) {
-        int delta_x = package[1];
-        int delta_y = package[2];
+        if (byte_index == 3) {
+            int8_t dx = (int8_t)packet[1];
+            int8_t dy = (int8_t)packet[2];
 
-        g_mouse_x = g_mouse_x + delta_x;
-        g_mouse_y = g_mouse_y - delta_y; /* Mouse send the signal upside down */
+            g_mouse_x += dx;
+            g_mouse_y -= dy;     /* eixo Y invertido */
 
-        if (g_mouse_x < 0) { g_mouse_x = 0; }
-        if (g_mouse_y < 0) { g_mouse_y = 0; }
+            /* Clipping simples */
+            if (g_mouse_x < 0) g_mouse_x = 0;
+            if (g_mouse_y < 0) g_mouse_y = 0;
+            /* (adicione limites de tela quando tiver width/height) */
 
-        mouse_byte_atual = 0;
-    }
+            byte_index = 0;
+        }
 
-    outb(0x20, 0x20); /* EOI: master */
-    outb(0xA0, 0x20); /* EOI: slave */
-    (void) frame;
+        send_eoi(12);            /* IRQ12 */
+        (void)frame;
 }
 
-void wait_buffer_entry_free(){
-    while ((inb(0x64) & 0x02) != 0) {
+void  wait_input_buffer_clear(){
+    while ((inb(PS2_STATUS_PORT) & PS2_STATUS_INPUT) != 0) {
+        //delay_real(60);
+        ;
+    }
+}
+
+void wait_input_buffer_full(void){
+    while ((inb(PS2_STATUS_PORT) & PS2_STATUS_OUTPUT) == 0) {
         //delay_real(60);
     }
 }
 
-void wait_buffer_out_fill(){
-    while ((inb(0x64) & 0x01) == 0) {
-        //delay_real(60);
-    }
+void ps2_write_command(uint8_t byte){
+    wait_input_buffer_clear();
+    outb(PS2_STATUS_PORT, byte);
 }
 
-void write_command(uint8_t byte){
-    wait_buffer_entry_free();
-    outb(0x64, byte);
-}
-
-void write_data(uint8_t byte){
-    wait_buffer_entry_free();
-    outb(0x60, byte);
+void ps2_write_data(uint8_t byte){
+    wait_input_buffer_clear();
+    outb(PS2_DATA_PORT, byte);
 }
 
 int read_data(){
-    wait_buffer_out_fill();
-    return inb(0x60);
+    wait_input_buffer_full();
+    return inb(PS2_DATA_PORT);
 }
 
 void activate_mouse(){
-    write_command(0xA8);
+    ps2_write_command(PS2_CMD_ENABLE_AUX);
 
-    write_command(0x20);
+    ps2_write_command(PS2_CMD_READ_CFG);
     int config = read_data();
 
     config = config | 0x02;  // turn bit 1
     config = config & ~0x20;
 
-    write_command(0x60);
-    write_data(config);
+    ps2_write_command(PS2_CMD_WRITE_CFG);
+    ps2_write_data(config);
 
-    write_command(0xD4);
-    write_data(0xF6);
+    ps2_write_command(PS2_CMD_WRITE_MOUSE);
+    ps2_write_data(MOUSE_CMD_DEFAULTS);
 
     read_data();
     
-    write_command(0xD4);
-    write_data(0xF4);
+    ps2_write_command(PS2_CMD_WRITE_MOUSE);
+    write_data(MOUSE_CMD_ENABLE);
     read_data();
 }
